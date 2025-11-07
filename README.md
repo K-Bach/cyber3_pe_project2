@@ -14,6 +14,18 @@ This repository contains the code and documentation for the second project of th
 Bonus question: 
 - Try to see if the output confidence can also be used for membership inference attack, how is the performance compared to the above loss-based approach?
 
+For this project I used the [MNIST dataset](https://www.kaggle.com/datasets/hojjatk/mnist-dataset). It consists of 70,000 grayscale images of handwritten digits (0–9), where each image is 28x28 pixels.
+- Training set: 60,000 images
+- Test set: 10,000 images
+- Classes: 10 (digits 0 to 9). 
+
+## Code Structure
+
+All the code for this project is contained in the `main.py` file. The code is organized into several sections:
+
+1. **Dataset download**: I used the [kagglehub library](https://www.kaggle.com/code/hojjatk/read-mnist-dataset/notebook) to download the MNIST dataset from Kaggle.
+2. **Data Loading**: The [MnistDataloader class](https://www.kaggle.com/code/hojjatk/read-mnist-dataset/notebook) is responsible for loading the MNIST dataset from the downloaded files. The output of the `load_data` method is two tuples: `(x_train, y_train)` and `(x_test, y_test)`, where `x_train` and `x_test` are numpy arrays containing the image data, and `y_train` and `y_test` are numpy arrays containing the corresponding labels.
+
 ## Terminology
 
 - **Membership Inference Attack**: An attack where the adversary aims to determine whether a specific data point was part of the training dataset used to train a machine learning model.
