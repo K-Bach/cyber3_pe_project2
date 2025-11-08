@@ -23,8 +23,22 @@ For this project I used the [MNIST dataset](https://www.kaggle.com/datasets/hojj
 
 All the code for this project is contained in the `main.py` file. The code is organized into several sections:
 
-1. **Dataset download**: I used the [kagglehub library](https://www.kaggle.com/code/hojjatk/read-mnist-dataset/notebook) to download the MNIST dataset from Kaggle.
-2. **Data Loading**: The [MnistDataloader class](https://www.kaggle.com/code/hojjatk/read-mnist-dataset/notebook) is responsible for loading the MNIST dataset from the downloaded files. The output of the `load_data` method is two tuples: `(x_train, y_train)` and `(x_test, y_test)`, where `x_train` and `x_test` are numpy arrays containing the image data, and `y_train` and `y_test` are numpy arrays containing the corresponding labels.
+1. **Dataset download**
+   - In the first implementation I used the [kagglehub library](https://www.kaggle.com/code/hojjatk/read-mnist-dataset/notebook) to download the MNIST dataset from Kaggle.
+   - Afterwards I found out that the MNIST dataset is conveniently available in Keras, so we can directly load it without downloading separately.
+2. **Data Loading**
+   - In the first implementation, the [MnistDataloader class](https://www.kaggle.com/code/hojjatk/read-mnist-dataset/notebook) was responsible for loading the MNIST dataset from the downloaded files.
+   - After switching to Keras, the data loading is done using the `keras.datasets.mnist.load_data()` function, which directly provides the training and testing datasets.
+   - (x_train, y_train) → training images and labels.
+   - (x_test, y_test) → testing images and labels.
+3. **Dataset exploration and understanding**
+   - Displaying dataset shapes.
+   - Displaying the classes.
+   - Displaying head.
+   - Producing class distribution histogram.
+   - Producing pixel intensity distribution histogram.
+   - Saving sample images from the dataset.
+   - Overall the dataset looks error free and well-balanced with approximately equal representation of each digit class.
 
 ## Terminology
 

@@ -1,115 +1,74 @@
-import kagglehub
-import numpy as np
-import struct
-from array import array
-from os.path import join
+import math
 import random
+import numpy as np
 import matplotlib.pyplot as plt
-
-# Download latest version
-input_path = kagglehub.dataset_download("hojjatk/mnist-dataset")
-training_images_filepath = join(
-    input_path, "train-images-idx3-ubyte/train-images-idx3-ubyte"
-)
-training_labels_filepath = join(
-    input_path, "train-labels-idx1-ubyte/train-labels-idx1-ubyte"
-)
-test_images_filepath = join(input_path, "t10k-images-idx3-ubyte/t10k-images-idx3-ubyte")
-test_labels_filepath = join(input_path, "t10k-labels-idx1-ubyte/t10k-labels-idx1-ubyte")
-
-print("Path to dataset files:", input_path)
-
-
-# MNIST Data Loader Class
-class MnistDataloader(object):
-    def __init__(
-        self,
-        training_images_filepath,
-        training_labels_filepath,
-        test_images_filepath,
-        test_labels_filepath,
-    ):
-        self.training_images_filepath = training_images_filepath
-        self.training_labels_filepath = training_labels_filepath
-        self.test_images_filepath = test_images_filepath
-        self.test_labels_filepath = test_labels_filepath
-
-    def read_images_labels(self, images_filepath, labels_filepath):
-        labels = []
-        with open(labels_filepath, "rb") as file:
-            magic, size = struct.unpack(">II", file.read(8))
-            if magic != 2049:
-                raise ValueError(
-                    "Magic number mismatch, expected 2049, got {}".format(magic)
-                )
-            labels = array("B", file.read())
-
-        with open(images_filepath, "rb") as file:
-            magic, size, rows, cols = struct.unpack(">IIII", file.read(16))
-            if magic != 2051:
-                raise ValueError(
-                    "Magic number mismatch, expected 2051, got {}".format(magic)
-                )
-            image_data = array("B", file.read())
-        images = []
-        for i in range(size):
-            images.append([0] * rows * cols)
-        for i in range(size):
-            img = np.array(image_data[i * rows * cols : (i + 1) * rows * cols])
-            img = img.reshape(28, 28)
-            images[i][:] = img
-
-        return images, labels
-
-    def load_data(self):
-        x_train, y_train = self.read_images_labels(
-            self.training_images_filepath, self.training_labels_filepath
-        )
-        x_test, y_test = self.read_images_labels(
-            self.test_images_filepath, self.test_labels_filepath
-        )
-        return (x_train, y_train), (x_test, y_test)
+from keras.datasets import mnist
 
 # Function to show images
-def show_images(images, title_texts):
-    cols = 5
-    rows = int(len(images) / cols) + 1
-    plt.figure(figsize=(30, 20))
-    index = 1
-    for x in zip(images, title_texts):
-        image = x[0]
-        title_text = x[1]
+def show_images(images, title_texts, cols=5, figsize=(30, 20)):
+    rows = math.ceil(len(images) / cols)  # Calculate rows dynamically
+    plt.figure(figsize=figsize)
+    
+    for index, (image, title_text) in enumerate(zip(images, title_texts), start=1):
         plt.subplot(rows, cols, index)
         plt.imshow(image, cmap="gray")
-        if title_text != "":
-            plt.title(title_text, fontsize=15)
-        index += 1
+        if title_text:
+            plt.title(title_text, fontsize=20)
+    plt.suptitle("Sample MNIST Images", fontsize=40, fontweight='bold')
 
+# ---------- Data Loading ----------
 
-# Load MNIST dataset
-mnist_dataloader = MnistDataloader(
-    training_images_filepath,
-    training_labels_filepath,
-    test_images_filepath,
-    test_labels_filepath,
-)
-(x_train, y_train), (x_test, y_test) = mnist_dataloader.load_data()
+# Load train and test sets
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
 
-# Show some random training and test images
-# images_2_show = []
-# titles_2_show = []
-# for i in range(0, 10):
-#     r = random.randint(1, 60000)
-#     images_2_show.append(x_train[r])
-#     titles_2_show.append("training image [" + str(r) + "] = " + str(y_train[r]))
+# ---------- Data Exploration ----------
 
-# for i in range(0, 5):
-#     r = random.randint(1, 10000)
-#     images_2_show.append(x_test[r])
-#     titles_2_show.append("test image [" + str(r) + "] = " + str(y_test[r]))
+# Display dataset shapes
+print("Training data shape:", x_train.shape, y_train.shape)
+print("Testing data shape:", x_test.shape, y_test.shape)
 
-# show_images(images_2_show, titles_2_show)
+# Display classes in the dataset
+classes = np.unique(y_train)
+nclasses = len(classes)
+print("Number of classes:", nclasses)
+print("Classes:", classes)
 
-# plt.show()
+# Display head
+print("First 10 training labels:", y_train[:10])
+print("First training image array:\n", x_train[0])
+
+# Save class distribution histogram
+plt.figure(figsize=(8, 4))
+unique, counts = np.unique(y_train, return_counts=True)
+plt.bar(unique, counts, color=["#280536", "#A25ACC"] * (len(unique) // 2 + 1))
+plt.xticks(unique)  # Ensure all class numbers are shown on the x-axis
+plt.title("Class Distribution in Training set", fontsize=14, fontweight='bold')
+plt.xlabel("Class (Digits 0-9)")
+plt.ylabel("Count")
+plt.savefig("pics/class_distribution_training_set.png")
+
+# Save pixel intensity distribution histogram
+plt.figure(figsize=(6,4))
+plt.hist(x_train.reshape(-1), bins=10, color="#280536", edgecolor="black")
+plt.title("Pixel Intensity Distribution", fontsize=14, fontweight='bold')
+plt.xlabel("Pixel Intensity (0-255)")
+plt.ylabel("Frequency")
+plt.savefig("pics/pixel_intensity_distribution.png")
+
+# Save some random training and test images
+images_2_show = []
+titles_2_show = []
+for i in range(0, 10):
+    r = random.randint(1, 60000)
+    images_2_show.append(x_train[r])
+    titles_2_show.append("training image [" + str(r) + "] = " + str(y_train[r]))
+
+for i in range(0, 5):
+    r = random.randint(1, 10000)
+    images_2_show.append(x_test[r])
+    titles_2_show.append("test image [" + str(r) + "] = " + str(y_test[r]))
+
+show_images(images_2_show, titles_2_show)
+plt.savefig("pics/sample_mnist_images.png")
 
 
