@@ -71,6 +71,29 @@ All the code for this project is contained in the `main.py` file, with helper fu
    - **Threshold Optimization**: The `find_best_confidence_threshold()` function finds the optimal confidence value `t` such that if `confidence >= t`, the sample is classified as a Member.
    - **Method Comparison**: The script concludes by printing a side-by-side comparison of the "Loss-Based" vs. "Confidence-Based" attack accuracies demonstrating that they are mathematically equivalent approaches for membership inference.
 
+## Pros and Cons Analysis
+
+**Advantages: Simplicity and Efficiency**
+
+The primary strength of the loss-based attack (or confidence-based attack) is its extreme simplicity and interpretability. Unlike complex privacy attacks that require training dozens of shadow models or calculating expensive gradients, this approach uses the model's native loss function (a metric already computed during standard training). The attack's logic is pretty straightforward:
+
+- If a model makes a mistake (high loss) on an image, it likely hasn't seen it before
+- If it predicts perfectly (low loss), it has likely memorized it. 
+
+This makes the privacy risk easy to demonstrate and explain to stakeholders without needing deep technical expertise in cryptography or adversarial machine learning. Furthermore, this method is computationally efficient. It requires only a single forward pass through the network to generate a prediction and calculate the loss for a target sample. This allows for real-time auditing of models with minimal resource overhead. When a clear generalization gap exists (the model performs significantly better on training data than on test data) the loss distributions separate distinctly, allowing the attacker to identify members with high accuracy.
+
+**Limitations: The Conflation of Generalization and Memorization**
+
+The most significant theoretical flaw of this approach is that the attack assumes that low loss is a unique signature of training data, but this is not always true. Easy test samples (like a perfect "1") will naturally yield low loss values even if the model has never seen them (This can be seen in the Confidence Distribution for Model 2). The attack incorrectly classifies these as members (False Positives) because it cannot distinguish between a model memorizing a specific training example and a model simply generalizing well to an easy unseen example.
+
+The same flaw applies to high-loss members (False Negatives). Training datasets often contain outliers, mislabeled data, or ambiguous samples that are difficult to learn. Even after training, the model may still have high loss on these specific "hard" members. Consequently, the threshold-based attack will fail to identify them as training data.  
+This is a critical failure in privacy contexts because outliers are often the most sensitive data points (like a rare disease case in a medical dataset), yet this specific attack methodology is least likely to protect them.
+
+**Limitations: The Rigidity of a Global Threshold**
+
+Regarding the threshold, the reliance on a single scalar threshold is brittle. A global threshold assumes that the boundary between member and non-member loss is uniform across the entire dataset. In reality, some classes are inherently harder to learn than others (like distinguishing an "8" from a "3" is harder than identifying a "1"). A threshold that works well for the easy classes might be completely ineffective for the hard classes.  
+Without class-specific thresholds or calibration, the attack's accuracy effectively becomes an average that hides these class-specific failures. If the model is well-regularized, the training and test loss distributions will overlap almost perfectly, rendering this threshold-based approach mathematically useless (almost like random guessing).
+
 ## Terminology
 
 - **Membership Inference Attack (MIA)**: An attack where the adversary aims to determine whether a specific data point was part of the training dataset used to train a machine learning model.
