@@ -21,7 +21,7 @@ For this project I used the [MNIST dataset](https://www.kaggle.com/datasets/hojj
 
 ## Code Structure
 
-All the code for this project is contained in the `main.py` file. The code is organized into several sections:
+All the code for this project is contained in the `main.py` file, with helper functions located in `functions.py`. The code is organized into several logical sections:
 
 1. **Dataset download**
    - In the first implementation I used the [kagglehub library](https://www.kaggle.com/code/hojjatk/read-mnist-dataset/notebook) to download the MNIST dataset from Kaggle.
@@ -65,18 +65,24 @@ All the code for this project is contained in the `main.py` file. The code is or
      - **ROC AUC Score**: Measures the model's global ability to rank members lower than non-members (0.5 = random guess, 1.0 = total leakage).
      - **Max Attacker Advantage**: Calculates the maximum difference between True Positive Rate and False Positive Rate.
      - **ROC Curve**: Generates and saves plots (`pics/roc_curve_...`) to visually assess the trade-off between false positives and true positives at different thresholds.
+9. **Output Confidence Analysis (Bonus)**
+   - **Confidence Extraction**: The `get_individual_confidences()` function extracts the model's output probability specifically for the *true label* of each image. This tests the hypothesis that models are more confident (probabilities closer to 1.0) on training data than on test data.
+   - **Visualization**: The `plot_confidence_distributions()` function compares the density of confidence scores for Members vs. Non-Members.
+   - **Threshold Optimization**: The `find_best_confidence_threshold()` function finds the optimal confidence value `t` such that if `confidence >= t`, the sample is classified as a Member.
+   - **Method Comparison**: The script concludes by printing a side-by-side comparison of the "Loss-Based" vs. "Confidence-Based" attack accuracies demonstrating that they are mathematically equivalent approaches for membership inference.
 
 ## Terminology
 
 - **Membership Inference Attack (MIA)**: An attack where the adversary aims to determine whether a specific data point was part of the training dataset used to train a machine learning model.
 - **Loss**: Loss is a measure of how well the model's predictions match the actual labels. Loss levels can indicate whether a data point was part of the training set or not, as models typically perform better (lower loss) on training data compared to unseen test data.
-- **Overfitting**: A phenomenon where a machine learning model learns the training data too well, capturing noise and specific details rather than general patterns. In this project, we intentionally induce overfitting by training for more epochs (50 vs. 5) to demonstrate that overfitted models are more vulnerable to membership inference attacks because they "memorize" the training data.
+- **Output Confidence**: The probability score (0.0 to 1.0) that the model assigns to the correct class label. In membership inference, we assume that models will assign higher confidence scores to data they have seen during training (Members) compared to unseen data (Non-Members).
+- **Overfitting**: A phenomenon where a machine learning model learns the training data too well, capturing noise and specific details rather than general patterns. In this project, we intentionally induce overfitting by training for more epochs (50 vs. 5) to demonstrate that overfitted models are more vulnerable to MIA because they "memorize" the training data.
 - **Convolutional Neural Network (CNN)**: A specific type of deep neural network designed for processing structured grid data, such as images. In this project, we use a CNN architecture to extract features from the MNIST handwritten digits for classification.
 - **Epoch**: A single pass of the entire training dataset through the machine learning algorithm. We manipulate the number of epochs (Low=5, High=50) to observe the impact of training duration on the model's privacy leakage.
-- **Threshold**: A specific value used to differentiate between training and test instances based on their loss values. If the loss of an instance is below the threshold, it is classified as a member of the training set; otherwise, it is classified as a non-member.
-- **Output Confidence**: The probability or confidence score that a model assigns to its predictions. Higher confidence scores may indicate that the model is more certain about its predictions, which can also be exploited in membership inference attacks.
+- **Threshold**: A specific value used to differentiate between training and test instances.
+  - In **Loss-based attacks**: If `loss <= threshold`, the sample is predicted as a Member.
+  - In **Confidence-based attacks**: If `confidence >= threshold`, the sample is predicted as a Member.
 - **Privacy Leakage**: The unintended exposure of sensitive information about the training data through the model's behavior, which can be exploited by adversaries.
-- **Data Point**: An individual instance or record in a dataset, consisting of features (like pixel values) and a label (like the digit 0-9).
 - **ROC Curve (Receiver Operating Characteristic)**: A graphical plot that illustrates the diagnostic ability of our membership inference attack as the discrimination threshold is varied. It plots the True Positive Rate against the False Positive Rate.
 - **AUC (Area Under the Curve)**: A single scalar score summarizing the ROC curve. An AUC of 0.5 indicates the attack is no better than random guessing, while an AUC of 1.0 represents a perfect attack (total privacy leakage).
 - **Attacker Advantage**: A metric quantifying the privacy risk, calculated as `True Positive Rate - False Positive Rate`. A value of 0 implies the model is safe (the attacker cannot distinguish members from non-members), while a value closer to 1 indicates high vulnerability.
