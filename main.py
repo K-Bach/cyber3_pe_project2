@@ -1,9 +1,15 @@
+import os
 import math
 import random
 import numpy as np
 import matplotlib.pyplot as plt
-from keras.datasets import mnist
 from keras import layers, models, losses
+from keras.datasets import mnist
+from keras.models import load_model
+
+# Create output directories to prevent FileNotFoundError
+os.makedirs("pics", exist_ok=True)
+os.makedirs("models", exist_ok=True)
 
 
 # Function to show images
@@ -21,13 +27,11 @@ def show_images(images, title_texts, cols=5, figsize=(30, 20)):
 
 # ---------- Data Loading ----------
 
-
 # Load train and test sets
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
 
 # ---------- Data Exploration ----------
-
 
 # Display dataset shapes
 print("Training data shape:", x_train.shape, y_train.shape)
@@ -80,7 +84,6 @@ plt.savefig("pics/sample_mnist_images.png")
 
 # ---------- Data Preprocessing ----------
 
-
 print("\n---------- Data Preprocessing ----------")
 # Normalize pixel values to be between 0 and 1
 x_train_norm = x_train.astype("float32") / 255.0
@@ -120,32 +123,120 @@ def build_cnn_model():
 
 # ---------- Training ----------
 
-
 EPOCHS = 5
 EPOCHS_HIGH = 50  # More epochs (Higher risk of overfitting/vulnerability)
 BATCH_SIZE = 64
+# Toggle this to True to skip training and load from file
+LOAD_FROM_FILE = True
 
-print(f"\n---------- Training Model 1 ({EPOCHS} Epochs) ----------")
-model_1 = build_cnn_model()
-history_1 = model_1.fit(
-    x_train_norm,
-    y_train,
-    epochs=EPOCHS,
-    batch_size=BATCH_SIZE,
-    validation_split=0.1,
-    verbose="auto",
+if LOAD_FROM_FILE and os.path.exists("models/mnist_cnn_model.keras"):
+    print("Loading pre-trained models...")
+    model_1 = load_model("models/mnist_cnn_model.keras")
+    model_2 = load_model("models/mnist_cnn_model_high_epochs.keras")
+else:
+    print(f"\n---------- Training Model 1 ({EPOCHS} Epochs) ----------")
+    model_1 = build_cnn_model()
+    history_1 = model_1.fit(
+        x_train_norm,
+        y_train,
+        epochs=EPOCHS,
+        batch_size=BATCH_SIZE,
+        validation_split=0.1,
+        verbose="auto",
+    )
+
+    print(f"\n---------- Training Model 2 ({EPOCHS_HIGH} Epochs) ----------")
+    model_2 = build_cnn_model()
+    history_2 = model_2.fit(
+        x_train_norm,
+        y_train,
+        epochs=EPOCHS_HIGH,
+        batch_size=BATCH_SIZE,
+        validation_split=0.1,
+        verbose="auto",
+    )
+
+    model_1.save("models/mnist_cnn_model.keras")
+    model_2.save("models/mnist_cnn_model_high_epochs.keras")
+
+
+# ---------- Loss Distribution Analysis ----------
+
+# Randomly samples N instances and calculates the individual loss for each.
+def get_individual_losses(model, x_data, y_data, num_samples):
+    # Random Sample
+    n = len(x_data)
+    if n > num_samples:
+        indices = np.random.choice(n, num_samples, replace=False)
+        x_sample = x_data[indices]
+        y_sample = y_data[indices]
+    else:
+        x_sample = x_data
+        y_sample = y_data
+
+    # Get Model Predictions
+    predictions = model.predict(x_sample, verbose=0)
+
+    # Calculate Loss for each instance
+    loss_fn = losses.SparseCategoricalCrossentropy(reduction="none")
+    per_sample_losses = loss_fn(y_sample, predictions).numpy()
+
+    return per_sample_losses
+
+
+def plot_distributions(train_losses, test_losses, title, filename):
+    plt.figure(figsize=(10, 6))
+
+    # Plot histograms
+    plt.hist(
+        train_losses,
+        bins=50,
+        alpha=0.7,
+        label="Training Data (Members)",
+        color="blue",
+        density=True,
+    )
+    plt.hist(
+        test_losses,
+        bins=50,
+        alpha=0.7,
+        label="Test Data (Non-Members)",
+        color="red",
+        density=True,
+    )
+
+    plt.title(title, fontsize=16, fontweight="bold")
+    plt.xlabel("Loss Value", fontsize=12)
+    plt.ylabel("Density", fontsize=12)
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+
+    # Use Log scale to see the small differences better
+    plt.yscale("log")
+
+    plt.savefig(filename)
+    print(f"Plot saved to {filename}")
+    plt.close()
+
+
+NUM_SAMPLES = 10000
+
+print(f"\n---------- Analyzing Model 1 ({EPOCHS} Epochs) ----------")
+train_losses_1 = get_individual_losses(model_1, x_train_norm, y_train, NUM_SAMPLES)
+test_losses_1 = get_individual_losses(model_1, x_test_norm, y_test, NUM_SAMPLES)
+plot_distributions(
+    train_losses_1,
+    test_losses_1,
+    f"Loss Distribution - Model 1 ({EPOCHS} Epochs)",
+    "pics/loss_dist_model_1.png",
 )
 
-print(f"\n---------- Training Model 2 ({EPOCHS_HIGH} Epochs) ----------")
-model_2 = build_cnn_model()
-history_2 = model_2.fit(
-    x_train_norm,
-    y_train,
-    epochs=EPOCHS_HIGH,
-    batch_size=BATCH_SIZE,
-    validation_split=0.1,
-    verbose="auto",
+print(f"\n---------- Analyzing Model 2 ({EPOCHS_HIGH} Epochs) ----------")
+train_losses_2 = get_individual_losses(model_2, x_train_norm, y_train, NUM_SAMPLES)
+test_losses_2 = get_individual_losses(model_2, x_test_norm, y_test, NUM_SAMPLES)
+plot_distributions(
+    train_losses_2,
+    test_losses_2,
+    f"Loss Distribution - Model 2 ({EPOCHS_HIGH} Epochs)",
+    "pics/loss_dist_model_2.png",
 )
-
-model_1.save("models/mnist_cnn_model.keras")
-model_2.save("models/mnist_cnn_model_high_epochs.keras")

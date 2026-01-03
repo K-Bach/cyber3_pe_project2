@@ -47,17 +47,18 @@ All the code for this project is contained in the `main.py` file. The code is or
      - **Convolutional Blocks**: Two blocks consisting of `Conv2D` layers (32 and 64 filters) followed by `MaxPooling2D` for feature extraction and dimensionality reduction.
      - **Classification Head**: A `Flatten` layer followed by a `Dense` layer (64 units, ReLU) and a final output `Dense` layer (10 units, Softmax) for classification.
    - The model is compiled with the Adam optimizer and Sparse Categorical Crossentropy loss.
-
 6. **Training**
    - The script trains two distinct versions of the model to facilitate the analysis of privacy vulnerabilities (specifically overfitting):
-     - **Model 1**: Trained for **5 epochs**. Represents a standard, well-generalized model.
-     - **Model 2**: Trained for **50 epochs**. Represents a potentially over-trained model, intended to exhibit higher vulnerability to membership inference attacks.
+     - **Model 1**: Trained for 5 epochs. Represents a standard, well-generalized model.
+     - **Model 2**: Trained for 50 epochs. Represents a potentially over-trained model, intended to present higher vulnerability to membership inference attacks.
    - Both models use a batch size of 64 and a 10% validation split.
-
-7. **Model Saving**
    - The trained models are saved in the modern Keras format for later use in the attack phase:
      - `models/mnist_cnn_model.keras` (Standard model)
      - `models/mnist_cnn_model_high_epochs.keras` (Over-trained model)
+7. **Loss Distribution Analysis**
+   - **Individual Loss Calculation**: The `get_individual_losses()` function calculates the specific CrossEntropy loss for individual data points rather than the average batch loss. This is done for 5,000 random samples from both the training set (Members) and test set (Non-Members).
+   - **Visualization**: The `plot_distributions()` function generates histograms comparing the loss distributions of members vs. non-members.
+     - Plots are generated for both the 5-epoch model and the 50-epoch model to visually demonstrate the increased separation (and thus privacy leakage) caused by overfitting.
 
 ## Terminology
 
