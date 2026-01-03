@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from keras import layers, models, losses
 from keras.datasets import mnist
 from keras.models import load_model
+from sklearn.metrics import roc_curve, auc
 
 # Create output directories to prevent FileNotFoundError
 os.makedirs("pics", exist_ok=True)
@@ -240,3 +241,104 @@ plot_distributions(
     f"Loss Distribution - Model 2 ({EPOCHS_HIGH} Epochs)",
     "pics/loss_dist_model_2.png",
 )
+
+
+# ---------- Threshold Selection & Attack/Privacy Analysis ----------
+
+# find the threshold that maximizes attack accuracy (separating members from non-members)
+def find_best_threshold(train_losses, test_losses):
+    # Define the threshold range between the lowest and highest observed loss
+    all_losses = np.concatenate([train_losses, test_losses])
+    min_loss, max_loss = np.min(all_losses), np.max(all_losses)
+
+    best_acc = 0
+    best_threshold = 0
+
+    # Test 1000 evenly spaced thresholds
+    thresholds = np.linspace(min_loss, max_loss, 1000)
+
+    for t in thresholds:
+        # Calculate True Positives (Members correctly identified)
+        tp = np.sum(train_losses <= t)
+        # Calculate True Negatives (Non-Members correctly identified)
+        tn = np.sum(test_losses > t)
+
+        # Calculate Accuracy
+        total_samples = len(train_losses) + len(test_losses)
+        acc = (tp + tn) / total_samples
+
+        # Keep the best one
+        if acc > best_acc:
+            best_acc = acc
+            best_threshold = t
+
+    return best_threshold, best_acc
+
+
+print("\n---------- Membership Inference Attack Results ----------")
+
+# Analyze Model 1
+thresh_1, acc_1 = find_best_threshold(train_losses_1, test_losses_1)
+print(
+    f"Model 1 ({EPOCHS} Epochs) - Best Threshold: {thresh_1:.4f}, Attack Accuracy: {acc_1*100:.2f}%"
+)
+
+# Analyze Model 2 (high Epochs)
+thresh_2, acc_2 = find_best_threshold(train_losses_2, test_losses_2)
+print(
+    f"Model 2 ({EPOCHS_HIGH} Epochs) - Best Threshold: {thresh_2:.4f}, Attack Accuracy: {acc_2*100:.2f}%"
+)
+
+print("\n---------- Conclusion ----------")
+if acc_2 > acc_1 + 0.05:  # 5% margin
+    print("SUCCESS: The over-trained model (Model 2) is significantly more vulnerable.")
+else:
+    print("RESULT: Both models have similar vulnerability.")
+
+
+# Analyze and plot Privacy Risk using ROC and AUC
+def analyze_privacy_risk(train_losses, test_losses, model_name):
+    # Create labels: 1 for members (train), 0 for non-members (test)
+    y_true = np.concatenate([np.ones(len(train_losses)), np.zeros(len(test_losses))])
+
+    # In MIA, we predict "Member" (1) if loss is LOW.
+    # Standard ROC expects "higher value = class 1".
+    # So we negate the losses (-loss) so that lower loss becomes a higher score.
+    y_scores = np.concatenate([-train_losses, -test_losses])
+
+    # Calculate ROC and AUC
+    fpr, tpr, thresholds = roc_curve(y_true, y_scores)
+    roc_auc = auc(fpr, tpr)
+
+    # Calculate Advantage (TPR - FPR) and find the max
+    advantage = tpr - fpr
+    max_advantage = np.max(advantage)
+
+    print(f"\n--- Privacy Risk Analysis for {model_name} ---")
+    print(f"ROC AUC Score: {roc_auc:.4f} (0.5 is random, 1.0 is total leakage)")
+    print(f"Max Attacker Advantage: {max_advantage:.4f} (0 is safe, 1 is vulnerable)")
+
+    # Plot ROC Curve
+    plt.figure(figsize=(8, 6))
+    plt.plot(
+        fpr, tpr, color="darkorange", lw=2, label=f"ROC curve (area = {roc_auc:.2f})"
+    )
+    plt.plot([0, 1], [0, 1], color="navy", lw=2, linestyle="--")
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel("False Positive Rate (Non-Members misclassified as Members)")
+    plt.ylabel("True Positive Rate (Members correctly identified)")
+    plt.title(f"ROC Curve - {model_name}")
+    plt.legend(loc="lower right")
+    plt.grid(True, alpha=0.3)
+
+    filename = f"pics/roc_curve_{model_name.replace(' ', '_')}.png"
+    plt.savefig(filename)
+    print(f"ROC plot saved to {filename}")
+
+
+# Analyze Model 1
+analyze_privacy_risk(train_losses_1, test_losses_1, f"Model 1 ({EPOCHS} Epochs)")
+
+# Analyze Model 2
+analyze_privacy_risk(train_losses_2, test_losses_2, f"Model 2 ({EPOCHS_HIGH} Epochs)")

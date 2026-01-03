@@ -56,9 +56,15 @@ All the code for this project is contained in the `main.py` file. The code is or
      - `models/mnist_cnn_model.keras` (Standard model)
      - `models/mnist_cnn_model_high_epochs.keras` (Over-trained model)
 7. **Loss Distribution Analysis**
-   - **Individual Loss Calculation**: The `get_individual_losses()` function calculates the specific CrossEntropy loss for individual data points rather than the average batch loss. This is done for 5,000 random samples from both the training set (Members) and test set (Non-Members).
+   - **Individual Loss Calculation**: The `get_individual_losses()` function calculates the specific CrossEntropy loss for individual data points rather than the average batch loss. This is done for 10,000 random samples from both the training set (Members) and test set (Non-Members).
    - **Visualization**: The `plot_distributions()` function generates histograms comparing the loss distributions of members vs. non-members.
      - Plots are generated for both the 5-epoch model and the 50-epoch model to visually demonstrate the increased separation (and thus privacy leakage) caused by overfitting.
+8. **Threshold Selection & Attack/Privacy Analysis**
+   - **Threshold Optimization**: The `find_best_threshold()` function performs a search over the entire range of observed loss values to identify the optimal threshold that maximizes the attack accuracy (separating members from non-members).
+   - **Privacy Risk Scoring**: The `analyze_privacy_risk()` function calculates advanced privacy metrics to quantify leakage more precisely:
+     - **ROC AUC Score**: Measures the model's global ability to rank members lower than non-members (0.5 = random guess, 1.0 = total leakage).
+     - **Max Attacker Advantage**: Calculates the maximum difference between True Positive Rate and False Positive Rate.
+     - **ROC Curve**: Generates and saves plots (`pics/roc_curve_...`) to visually assess the trade-off between false positives and true positives at different thresholds.
 
 ## Terminology
 
