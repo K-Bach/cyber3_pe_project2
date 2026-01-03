@@ -77,3 +77,8 @@ All the code for this project is contained in the `main.py` file. The code is or
 - **Output Confidence**: The probability or confidence score that a model assigns to its predictions. Higher confidence scores may indicate that the model is more certain about its predictions, which can also be exploited in membership inference attacks.
 - **Privacy Leakage**: The unintended exposure of sensitive information about the training data through the model's behavior, which can be exploited by adversaries.
 - **Data Point**: An individual instance or record in a dataset, consisting of features (like pixel values) and a label (like the digit 0-9).
+- **ROC Curve (Receiver Operating Characteristic)**: A graphical plot that illustrates the diagnostic ability of our membership inference attack as the discrimination threshold is varied. It plots the True Positive Rate against the False Positive Rate.
+- **AUC (Area Under the Curve)**: A single scalar score summarizing the ROC curve. An AUC of 0.5 indicates the attack is no better than random guessing, while an AUC of 1.0 represents a perfect attack (total privacy leakage).
+- **Attacker Advantage**: A metric quantifying the privacy risk, calculated as `True Positive Rate - False Positive Rate`. A value of 0 implies the model is safe (the attacker cannot distinguish members from non-members), while a value closer to 1 indicates high vulnerability.
+- **True Positive Rate (TPR)**: The proportion of actual training data samples (members) that the attack correctly identifies as members.
+- **False Positive Rate (FPR)**: The proportion of test data samples (non-members) that the attack incorrectly identifies as members.
